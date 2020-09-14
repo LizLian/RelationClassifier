@@ -21,38 +21,34 @@ pip install -r requirements.txt
 ```
 To train the model, run:
 ```
-python3 train.py [train_file]
+python3 train.py --train_file [train_file]
 ```
 
 Following flags help specify file paths and model hyper-parameters
 
-`--train_file` specifies the train file path
+`--train_file` specifies the train file path, required
 
-`--test_file` specifies the test_file path
+`--test_file` specifies the test_file path, optional, default=None
 
-`--epoch` upper epoch limit
+`--out_file` File containing the output predictions, required when a test file is given
 
-`--lr` learning rate
+`--epoch` upper epoch limit, optional, default=10
 
-`--batch_size` training batch size
+`--lr` learning rate, optional, default=0.1
 
-`--dropout` dropout rate
+`--batch_size` training batch size, optional, default=64
 
-`--embedding-source` Pre-trained embedding source name
+`--dropout` dropout rate, optional, default=0.5
 
-`--log-dir` Output directory for log file
+`--embedding-source` Pre-trained embedding source name, optional, default=freebase-vectors-skipgram1000-en
 
-`--fixed_embedding` Fix the embedding layer weights
+`--log-dir` Output directory for log file, optional, default='.'
 
-`--random_embedding` Use random initialized embedding layer
+`--context` cpu or gpu, optional, default to cpu
 
-`--out_file` File containing the output predictions
+`--max_len` Input sequence maximum length, optional, default=100
 
-`--context` cpu or gpu
-
-`--max_len` Input sequence maximum length
-
-`--debug` Run the model on a small dataset under a debug mode
+`--debug` Run the model on a small dataset under a debug mode, optional, default=True
 
 # Code structure
 model.py - model implementation for Relation Classifier

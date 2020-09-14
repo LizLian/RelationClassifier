@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Train a simple binary relation cla
 parser.add_argument('--train_file', type=str, help='File containing file representing the input TRAINING data')
 parser.add_argument('--val_file', type=str, help='File containing file representing the input VALIDATION data', default=None)
 parser.add_argument('--test_file', type=str, help='File containing file representing the input TEST data', default=None)
-parser.add_argument('--epochs', type=int, default=2, help='Upper epoch limit')
+parser.add_argument('--epochs', type=int, default=10, help='Upper epoch limit')
 parser.add_argument('--optimizer',type=str, help='Optimizer (adam, sgd, etc.)', default='adam')
 parser.add_argument('--lr',type=float, help='Learning rate', default=0.1)
 parser.add_argument('--batch_size',type=int, help='Training batch size', default=64)
