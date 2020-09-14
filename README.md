@@ -8,7 +8,8 @@ With the annotated entities: entity1 -> drinks; entity2 -> diabetes, the goal is
 There are 19 relation types in the training set. They are:
 `Component-Whole, Component-Whole-Inv, Instrument-Agency, Instrument-Agency-Inv, Member-Collection, Member-Collection-Inv, Cause-Effect, Cause-Effect-Inv, Entity-Destination, Entity-Destination-Inv, Content-Container, Content-Container-Inv, Message-Topic, Message-Topic-Inv, Product-Producer, Product-Producer-Inv, Entity-Origin, Entity-Origin-Inv, Other`
 
-This project is an implementation of the paper "Relation Classification via Multi-Level Attention CNNs" https://www.aclweb.org/anthology/P16-1123.pdf https://www.aclweb.org/anthology/P15-1061.pdf
+This project is an implementation of the paper "Relation Classification via Multi-Level Attention CNNs"[1].
+https://www.aclweb.org/anthology/P16-1123.pdf
 
 The model consists of input word embedding, relative position encodings, multiple CNN layers as the sliding window to recognize bigrams, trigrams etc., a max pooling layer, and  a dense layer at the end.
 This paper proposed a novel loss function  L = log(1 + exp(γ(m+ − sθ(x)y+ )) + log(1 + exp(γ(m− + sθ(x)c− ). It is referred to as a ranking method in the paper. Like some other ranking approaches that only update two classes/examples at every training round, this ranking approach can efficiently train the network for tasks which have a very large number of classes. The implementation of this loss function can be found in DistanceLoss class in train.py.
@@ -74,8 +75,8 @@ model.py - model implementation for Relation Classifier
 train.py - main loop for training the classifier
 
     Other than serving as the main loop for training the classifier, it also
-    contains the implementation of novel distance loss function. this is the
-    ranking loss function implemented from paper https://www.aclweb.org/anthology/P15-1061.pdf
+    contains the implementation of novel distance loss function. The ranking
+    was proposed by Wang, LinLin, et al.  
     Like some other ranking approaches that only update two classes/examples
     at every training round, this ranking approach can efficiently train the
     network for tasks which have a very large number of classes. The detailed
@@ -85,8 +86,8 @@ train.py - main loop for training the classifier
 
 load_data.py - read the input file and convert unstructured data into token ids.
 
-    use to preprocess files before training the classifier. You only need to provide a train data file. Dataset will be split into train and val
-    datasets.
+    use to preprocess files before training the classifier. You only need to
+    provide a train data file. Dataset will be split into train and val datasets.
 
 utils.py - utility file
 
@@ -94,3 +95,4 @@ utils.py - utility file
 
 # References
 1. Wang, Linlin, et al. "Relation classification via multi-level attention cnns." Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2016.
+2. Santos, Cicero Nogueira dos, Bing Xiang, and Bowen Zhou. "Classifying relations by ranking with convolutional neural networks." arXiv preprint arXiv:1504.06580 (2015).
