@@ -7,7 +7,8 @@ With the annotated entities: entity1 -> drinks; entity2 -> diabetes, the goal is
 
 This project is an implementation of the paper "Relation Classification via Multi-Level Attention CNNs" https://www.aclweb.org/anthology/P16-1123.pdf https://www.aclweb.org/anthology/P15-1061.pdf
 
-The model consists of input word embedding, relative position encodings, multiple CNN layers as the sliding window to recognize bigrams, trigrams etc, a max pooling layer, and  a dense layer at the end. This paper proposed a novel loss function  L = log(1 + exp(γ(m+ − sθ(x)y+ )) + log(1 + exp(γ(m− + sθ(x)c− ), which is mentioned as a ranking method in the paper. Like some other ranking approaches that only update two classes/examples at every training round, this ranking approach can efficiently train the network for tasks which have a very large number of classes. The implementation of this loss function can be found in DistanceLoss class in train.py.
+The model consists of input word embedding, relative position encodings, multiple CNN layers as the sliding window to recognize bigrams, trigrams etc., a max pooling layer, and  a dense layer at the end.
+This paper proposed a novel loss function  L = log(1 + exp(γ(m+ − sθ(x)y+ )) + log(1 + exp(γ(m− + sθ(x)c− ). It is referred to as a ranking method in the paper. Like some other ranking approaches that only update two classes/examples at every training round, this ranking approach can efficiently train the network for tasks which have a very large number of classes. The implementation of this loss function can be found in DistanceLoss class in train.py.
 
 # How to run
 Ensure all packages in requirements.txt are installed. This can be done by running:
@@ -19,7 +20,7 @@ To train the model, run:
 python3 train.py [train_file]
 ```
 
-Following optional flags help specify file paths and model hyper-parameters
+Following flags help specify file paths and model hyper-parameters
 
 `--train_file` specifies the train file path
 
@@ -52,15 +53,16 @@ Following optional flags help specify file paths and model hyper-parameters
 # Code structure
 model.py - model implementation for Relation Classifier
 
-    This model uses relative position encodings to measure the relative distance
+    This model uses relative position encoding to measure the relative distance
     between entities and each word in the input sentence.
 
-    Another feature from the model is mutiple CNN layers as sliding window to
-    recognize bigrams, trigrams etc., following with a maxpooling layer to extract
-    the most important feature.
+    Another feature from the model is CNN layers as sliding windows to
+    recognize bigrams, trigrams etc., following a max pooling layer to extract
+    the most important features.
 
     This model also incorporates an input attention layer so that it can compare
-    the entities with with each word embedding.
+    the entities with with each word embedding to calculate similarities.
+
     The last layer of the model is a dense layer for outputting the probabilities
     across all labels.
 
@@ -68,22 +70,19 @@ model.py - model implementation for Relation Classifier
 
 train.py - main loop for training the classifier
 
-    Other than serving as the main loop for training the classifier, it also
-    contains the novel distance loss function. this is the ranking loss function
-    implemented from paper https://www.aclweb.org/anthology/P15-1061.pdf
-    Like some other ranking approaches that only update two classes/examples
-    at every training round, this ranking approach can efficiently train the
-    network for tasks which have a very large number of classes.
-    The detailed implementation can be seen in the DistanceLoss class.
-    Inference is currently done through trian.py if you provide a test file.
-    May want separate the inference by creating a predict.py file.
+    Other than serving as the main loop for training the classifier, it also contains the implementation of novel distance loss function. this is the ranking loss function implemented from paper https://www.aclweb.org/anthology/P15-1061.pdf
+    Like some other ranking approaches that only update two classes/examples at every training round, this ranking approach can efficiently train the
+    network for tasks which have a very large number of classes. The detailed implementation can be seen in class DistanceLoss.
+    Inference is currently done through trian.py if a test file is provided. May want to separate the inference by creating a predict.py file later.
 
 load_data.py - read the input file and convert unstructured data into token ids.
 
-    use to preprocess files before training the classifier. You only need to
-    provide a train data file. Dataset will be split into train and val
-    dataset and loaded into DataLoader later.
+    use to preprocess files before training the classifier. You only need to provide a train data file. Dataset will be split into train and val
+    datasets.
 
 utils.py - utility file
 
     adapted from existing code
+
+# References
+1. Wang, Linlin, et al. "Relation classification via multi-level attention cnns." Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2016.
