@@ -6,28 +6,14 @@ from mxnet.gluon.block import HybridBlock
 from typing import List
 
 
-def _pos(x: int) -> int:
-    """
-    map the relative distance between [0, 123)
-    :param x: token index
-    :return: mapped relative position
-    """
-    if x < -60:
-        return 0
-    if x >= -60 and x <= 60:
-        return x + 61
-    if x > 60:
-        return 122
-
-
 class RelationClassifier(HybridBlock):
     """
     primary model block for attention-based, convolution-based or other classification model
     emb_input_dim: Size of the vocabulary
     emb_output_dim: embedding length
     """
-    def __init__(self, emb_input_dim: int, emb_output_dim: int, max_seq_len=100, filters=[2,3,4,5], num_classes=19,
-                 dropout=0.2, is_training=True):
+    def __init__(self, emb_input_dim: int, emb_output_dim: int, max_seq_len: int=100, filters: List[int] =[2,3,4,5],
+                 num_classes: int =19, dropout: float =0.2, is_training: bool=True):
         super(RelationClassifier, self).__init__()
         self.max_len = max_seq_len
         # dw - embeding size
@@ -38,7 +24,7 @@ class RelationClassifier(HybridBlock):
         self.is_training = is_training
 
         self.d = emb_output_dim + 2*self.dp
-        # define model layers here
+        # define model layers
         with self.name_scope():
             self.embedding = nn.Embedding(emb_input_dim, emb_output_dim)
             self.dist_embedding = nn.Embedding(np, self.dp)
@@ -51,10 +37,9 @@ class RelationClassifier(HybridBlock):
             self.conv3 = nn.Conv2D(dc, (filters[2], self.d), (1, self.d), in_channels=1, activation='relu')
             self.conv4 = nn.Conv2D(dc, (filters[3], self.d), (1, self.d), in_channels=1, activation='relu')
 
-            # self.maxpool = nn.MaxPool1D(max_seq_len, strides=1)
             self.wl = nn.Dense(nr, use_bias=False)
 
-    def input_attention(self, data: List[int], inds: List[int]):
+    def input_attention(self, data: 'NDArray', inds: 'NDArray') -> 'NDArray':
         """
         self-implemented input attention
         it compares each argument vector with the input embedding and returns the similarities.
@@ -87,19 +72,7 @@ class RelationClassifier(HybridBlock):
         # return R
         return x_concat
 
-    def scoring(self, R_star):
-        """
-        scoring function
-        :param R_star: input vector for the final dense layer
-        :return: a score for each label
-        """
-        # R_star (batch_size, dc=500, n=100)
-        # R_star.transpose x WL
-        # (1, dc) x (dc, nr)
-        score = self.wl(R_star.transpose((0,2,1))) # (batch_size, n=100, nr=19)
-        return score
-
-    def hybrid_forward(self, F, data: List[int], inds: List[int]):
+    def hybrid_forward(self, F, data: 'NDArray', inds: 'NDArray') -> 'NDArray':
         """
         :param data: The sentence representation (token indices to feed to embedding layer)
         :param inds: A vector - shape (2,) of two indices referring to positions of the two arguments
@@ -121,3 +94,17 @@ class RelationClassifier(HybridBlock):
         maxpool_out = self.dropout2(maxpool_out)
         score = self.wl(maxpool_out) # (batch_size, nr=19)
         return score
+
+
+def _pos(x: int) -> int:
+    """
+    map the relative distance between [0, 123)
+    :param x: token index
+    :return: mapped relative position
+    """
+    if x < -60:
+        return 0
+    if -60 <= x <= 60:
+        return x + 61
+    if x > 60:
+        return 122

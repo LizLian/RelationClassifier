@@ -1,8 +1,8 @@
 # coding: utf-8
 
-import random, io, nltk
+import io, nltk
 import gluonnlp as nlp
-from typing import List
+from typing import List, Tuple
 import mxnet as mx
 from nltk import word_tokenize
 nltk.download('punkt')
@@ -31,10 +31,11 @@ relation_types = [
     ]
 
 
-def load_tsv_to_array(fname: str) -> List[str]:
+def load_tsv_to_array(fname: str) -> List[Tuple[str, int, int, str]]:
     """
-    Inputs: file path
-    Outputs: list/array of 3-tuples, each representing a data instance
+    load tsv file to array
+    :param fname: input file path
+    :return: a list of tuples, (relation, entity1 index, entity2 index, data)
     """
     arr = []
     with io.open(fname, 'r') as fp:
@@ -49,20 +50,21 @@ def load_tsv_to_array(fname: str) -> List[str]:
 
 ###    - Parse the input data by getting the word sequence and the argument POSITION IDs for e1 and e2
 ###    [[w_1, w_2, w_3, .....], [pos_1, pos_2], [label_id]]  for EACH data instance/sentence/argpair
-def load_dataset(file: str, test_file: str, max_length=100):
+def load_dataset(file: str, max_length: int = 100) -> Tuple['Vocab', List[Tuple[str, int, int, List[int]]], 'BasicTransform']:
     """
-    Inputs: training file in TSV format. Split the file later. Cross validation
-    Outputs: vocabulary (with attached embedding), training, validation and test datasets ready for neural net training
+    parse the input data by getting the word sequence and the argument position ids for entity1 and entity2
+    :param file: training file in TSV format. Split the file later. Cross validation
+    :param max_length: vocabulary (with attached embedding), training, validation and test datasets
+            ready for neural net training
+    :return: vocab, dataset, data transform object
     """
     train_array = load_tsv_to_array(file)
-    test_array  = load_tsv_to_array(test_file)
 
-    vocabulary = build_vocabulary(train_array, test_array)
+    vocabulary = build_vocabulary(train_array)
     dataset = preprocess_dataset(train_array, vocabulary, max_length)
-    test_dataset = preprocess_dataset(test_array, vocabulary, max_length)
-
     data_transform = BasicTransform(relation_types, max_length)
-    return vocabulary, dataset, test_dataset, data_transform
+    return vocabulary, dataset, data_transform
+
 
 def tokenize(txt: str) -> List[str]:
     """
@@ -72,22 +74,18 @@ def tokenize(txt: str) -> List[str]:
     return word_tokenize(txt)
 
 
-def build_vocabulary(tr_array: List[int], tst_array: List[int]) -> 'Vocab':
+def build_vocabulary(tr_array: List[Tuple[str, int, int, List[str]]]) -> 'Vocab':
     """
-    Inputs: arrays representing the training, validation and test data
+    Inputs: arrays representing the training, validation or test data
     Outputs: vocabulary (Tokenized text as in-place modification of input arrays or returned as new arrays)
     """
-    all_tokens = []
     tr_array, tokens = _get_tokens(tr_array)
-    all_tokens.extend(tokens)
-    tst_array, tokens = _get_tokens(tst_array)
-    all_tokens.extend(tokens)
-    counter = nlp.data.count_tokens(all_tokens)
+    counter = nlp.data.count_tokens(tokens)
     vocab = nlp.Vocab(counter)
     return vocab
 
 
-def _get_tokens(array: List[str]):
+def _get_tokens(array: Tuple[str, int, int, str]) -> Tuple[List[Tuple[str, int, int, List[str]]], List[str]]:
     """
     an internal function that maps word tokens to indices
     """
@@ -110,7 +108,7 @@ def _get_tokens(array: List[str]):
     return array, all_tokens
 
 
-def _preprocess(x: List[List[int]], vocab: 'Vocab', max_len: int):
+def _preprocess(x: Tuple[str, int, int, List[str]], vocab: 'Vocab', max_len: int) -> Tuple[str, int, int, List[int]]:
     """
     Inputs: data instance x (tokenized), vocabulary, maximum length of input (in tokens)
     Outputs: data mapped to token IDs, with corresponding label
@@ -121,7 +119,9 @@ def _preprocess(x: List[List[int]], vocab: 'Vocab', max_len: int):
 
     return label, ind1, ind2, data
 
-def preprocess_dataset(dataset: List[List[List[int]]], vocab: 'Vocab', max_len: int):
+
+def preprocess_dataset(dataset: Tuple[str, int, int, List[str]], vocab: 'Vocab', max_len: int)\
+        -> Tuple[str, int, int, List[int]]:
     """
     map data to token ids with corresponding labels
     """
@@ -142,40 +142,21 @@ class BasicTransform(object):
         Maximum sequence length - longer seqs will be truncated and shorter ones padded
     
     """
-    def __init__(self, labels, max_len=32):
+    def __init__(self, labels: List[str], max_len: int = 32):
         self._max_seq_length = max_len
-        self._label_map = {}
+        self.label_map = {}
         for (i, label) in enumerate(labels):
-            self._label_map[label] = i
-        self._label_map['?'] = i+1
+            self.label_map[label] = i
+        self.label_map['?'] = i+1
     
-    def __call__(self, label, ind1, ind2, data):
-        label_id = self._label_map[label]
+    def __call__(self, label: str, ind1: int, ind2: int, data: str):
+        label_id = self.label_map[label]
         padded_data = data + [0] * (self._max_seq_length - len(data))
         inds = mx.nd.array([ind1, ind2])
         return mx.nd.array(padded_data, dtype='int32'), inds, mx.nd.array([label_id], dtype='int32')
 
 
-def split_file(file: str) -> None:
-    """
-    split the input file to train and dev sets
-    80/20 split
-    :param file: input file name
-    """
-    with open(file) as f:
-        lines = f.readlines()
-    random.shuffle(lines)
-    train_size = int(len(lines) * 0.8)
-    with open("../train.tsv", "w") as f:
-        for line in lines[0:train_size]:
-            f.write(line)
-    with open("../val.tsv", "w") as f:
-        for line in lines[train_size+1:]:
-            f.write(line)
-
-
 if __name__=="__main__":
-    # load_tsv_to_array("../semevalTrain.tsv")
-    split_file("../semevalTrain.tsv")
-    train_file = "../train.tsv"
-    val_file = "../val.tsv"
+    load_tsv_to_array("../data/semevalTrain.tsv")
+    # train_file = "../data/train.tsv"
+    # val_file = "../data/val.tsv"
