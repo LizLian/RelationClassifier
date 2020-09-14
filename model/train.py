@@ -26,7 +26,7 @@ parser.add_argument('--log_dir', type=str, default='.', help='Output directory f
 parser.add_argument('--fixed_embedding', action='store_true', help='Fix the embedding layer weights')
 parser.add_argument('--random_embedding', action='store_true', help='Use random initialized embedding layer')
 parser.add_argument('--out_file', type=str, help='File containing the output predictions')
-parser.add_argument('--context', type=str, help='cpu or gpu'
+parser.add_argument('--context', type=str, help='cpu or gpu')
 parser.add_argument('--max_len', type=int, default=100, help='Input sequence maximum length')
 parser.add_argument('--debug', type=bool, default=True, help='Run the model on a small dataset for debugging purpose')
 
