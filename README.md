@@ -20,19 +20,33 @@ python3 train.py [train_file]
 ```
 
 Following optional flags help specify file paths and model hyper-parameters
+
 `--train_file` specifies the train file path
+
 `--test_file` specifies the test_file path
+
 `--epoch` upper epoch limit
+
 `--lr` learning rate
+
 `--batch_size` training batch size
+
 `--dropout` dropout rate
+
 `--embedding-source` Pre-trained embedding source name
+
 `--log-dir` Output directory for log file
+
 `--fixed_embedding` Fix the embedding layer weights
+
 `--random_embedding` Use random initialized embedding layer
+
 `--out_file` File containing the output predictions
+
 `--context` cpu or gpu
+
 `--max_len` Input sequence maximum length
+
 `--debug` Run the model on a small dataset under a debug mode
 
 # Code structure
@@ -71,4 +85,5 @@ load_data.py - read the input file and convert unstructured data into token ids.
     dataset and loaded into DataLoader later.
 
 utils.py - utility file
+
     adapted from existing code
