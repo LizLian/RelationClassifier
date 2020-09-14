@@ -5,7 +5,8 @@ Example: Fizzy [drinks] and meat cause heart disease and [diabetes].
 
 With the annotated entities: entity1 -> drinks; entity2 -> diabetes, the goal is to automatically recognize the input sentence express a cause-effect relation between entity1 and entity2.
 
-There are 19 relation types in the train dataset. They are: Component-Whole, Component-Whole-Inv, Instrument-Agency, Instrument-Agency-Inv, Member-Collection, Member-Collection-Inv, Cause-Effect, Cause-Effect-Inv, Entity-Destination, Entity-Destination-Inv, Content-Container, Content-Container-Inv, Message-Topic, Message-Topic-Inv, Product-Producer, Product-Producer-Inv, Entity-Origin, Entity-Origin-Inv, Other
+There are 19 relation types in the training set. They are:
+`Component-Whole, Component-Whole-Inv, Instrument-Agency, Instrument-Agency-Inv, Member-Collection, Member-Collection-Inv, Cause-Effect, Cause-Effect-Inv, Entity-Destination, Entity-Destination-Inv, Content-Container, Content-Container-Inv, Message-Topic, Message-Topic-Inv, Product-Producer, Product-Producer-Inv, Entity-Origin, Entity-Origin-Inv, Other`
 
 This project is an implementation of the paper "Relation Classification via Multi-Level Attention CNNs" https://www.aclweb.org/anthology/P16-1123.pdf https://www.aclweb.org/anthology/P15-1061.pdf
 
