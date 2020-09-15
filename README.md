@@ -103,7 +103,7 @@ Epoch 5: training accuracy: 78% \
 Epoch 10: training accuracy: 87% \
 Epoch 15: training accuracy: 94% \
 Epoch 20: training accuracy: 97% \
-Epoch 25: training accuracy: 99% \
+Epoch 25: training accuracy: 99% 
 
 Test accuracy: 76%
 
