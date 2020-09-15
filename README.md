@@ -96,6 +96,17 @@ utils.py - utility file
 
     It's a logging file, adapted from existing code.
 
+# Results
+Sentence length 100, learning rate 0.3, epoch 25, dropout 0.5, word2vec embedding, including “other” loss, cross validation
+Epoch 1: training accuracy: 54% 
+Epoch 5: training accuracy: 78% 
+Epoch 10: training accuracy: 87% 
+Epoch 15: training accuracy: 94% 
+Epoch 20: training accuracy: 97% 
+Epoch 25: training accuracy: 99% 
+
+Test accuracy: 76%
+
 # References
 1. Wang, Linlin, et al. "Relation classification via multi-level attention cnns." Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2016.
 2. dos Santos, Cicero, Bing Xiang, and Bowen Zhou. "Classifying Relations by Ranking with Convolutional Neural Networks." Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing (Volume 1: Long Papers). 2015.
