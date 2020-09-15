@@ -30,7 +30,7 @@ Following flags help specify file paths and model hyper-parameters
 
 `--test_file` specifies the test_file path, optional, default=None
 
-`--out_file` File containing the output predictions, required when a test file is given
+`--out_file` file containing the output predictions, required when a test file is given
 
 `--epoch` upper epoch limit, optional, default=10
 
@@ -40,21 +40,22 @@ Following flags help specify file paths and model hyper-parameters
 
 `--dropout` dropout rate, optional, default=0.5
 
-`--embedding-source` Pre-trained embedding source name, optional, default=freebase-vectors-skipgram1000-en
+`--embedding-source` pre-trained embedding source name, optional, default=freebase-vectors-skipgram1000-en
 
-`--log-dir` Output directory for log file, optional, default='.'
+`--log-dir` output directory for log file, optional, default='.'
 
-`--context` cpu or gpu, optional, default to cpu
+`--context` run the model on a cpu or gpu device, optional, default to cpu
 
-`--max_len` Input sequence maximum length, optional, default=100
+`--max_len` input sequence maximum length, optional, default=100
 
-`--debug` Run the model on a small dataset under a debug mode, action='store_true', default=False
+`--debug` run the model on a small dataset under a debug mode, action='store_true', default=False
 
 # Code structure
 model.py - model implementation for Relation Classifier
 
     This model uses relative position encoding to measure the relative distance
-    between entities and each word in the input sentence.
+    between entities and each word in the input sentence. Relative distances are
+    later mapped to all positive distances.
 
     Another feature from the model is CNN layers as sliding windows to
     recognize bigrams, trigrams etc., following a max pooling layer to extract

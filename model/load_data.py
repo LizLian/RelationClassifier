@@ -48,9 +48,8 @@ def load_tsv_to_array(fname: str) -> List[Tuple[str, int, int, str]]:
     return arr
 
 
-###    - Parse the input data by getting the word sequence and the argument POSITION IDs for e1 and e2
-###    [[w_1, w_2, w_3, .....], [pos_1, pos_2], [label_id]]  for EACH data instance/sentence/argpair
-def load_dataset(file: str, max_length: int = 100) -> Tuple['Vocab', List[Tuple[str, int, int, List[int]]], 'BasicTransform']:
+def load_dataset(file: str, max_length: int = 100) \
+        -> Tuple[nlp.vocab, List[Tuple[str, int, int, List[int]]], 'BasicTransform']:
     """
     parse the input data by getting the word sequence and the argument position ids for entity1 and entity2
     :param file: training file in TSV format. Split the file later. Cross validation
@@ -94,6 +93,7 @@ def _get_tokens(array: Tuple[str, int, int, str]) -> Tuple[List[Tuple[str, int, 
         # e1 - entity 1; e2 - entity 2
         label, e1, e2, text = instance
         tokens = text.split(" ")
+        # mark start and end of entities
         tokens.insert(e2 + 1, "e2_end")
         tokens.insert(e2, "e2_start")
         tokens.insert(e1 + 1, "e1_end")
@@ -104,7 +104,7 @@ def _get_tokens(array: Tuple[str, int, int, str]) -> Tuple[List[Tuple[str, int, 
         tokens = [token for token in tokens if token not in["e1_start", "e2_start", "e1_end", "e2_end"]]
         inds[0] = inds[0] - 1
         inds[1] = inds[1] - 3
-        array[i] = (label, inds[0], inds[1], tokens)  ## IN-PLACE modification of tr_array
+        array[i] = (label, inds[0], inds[1], tokens)
         all_tokens.extend(tokens)
     return array, all_tokens
 
@@ -159,5 +159,3 @@ class BasicTransform(object):
 
 if __name__=="__main__":
     load_tsv_to_array("../data/semevalTrain.tsv")
-    # train_file = "../data/train.tsv"
-    # val_file = "../data/val.tsv"

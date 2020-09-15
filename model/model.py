@@ -10,8 +10,8 @@ class RelationClassifier(HybridBlock):
     """
     primary model block for the attention-based and convolution-based model
     """
-    def __init__(self, emb_input_dim: int, emb_output_dim: int, max_seq_len: int=100, filters: List[int] =[2,3,4,5],
-                 num_classes: int =19, dropout: float =0.2):
+    def __init__(self, emb_input_dim: int, emb_output_dim: int, max_seq_len: int = 100, filters: List[int] = [2, 3, 4, 5],
+                 num_classes: int = 19, dropout: float = 0.2):
         """
 
         :param emb_input_dim: Size of the vocabulary
@@ -47,7 +47,7 @@ class RelationClassifier(HybridBlock):
 
             self.wl = nn.Dense(nr, use_bias=False)
 
-    def input_attention(self, data: 'NDArray', inds: 'NDArray') -> 'NDArray':
+    def input_attention(self, data: mx.ndarray, inds: mx.ndarray) -> mx.ndarray:
         """
         self-implemented input attention
         it compares each argument vector with the input embedding and returns the similarities.
@@ -72,7 +72,7 @@ class RelationClassifier(HybridBlock):
         x_concat = mx.nd.concat(x_emb, dist1_emb, dist2_emb, dim=2) # shape (batch_size, n=100, d=350)
         return x_concat
 
-    def hybrid_forward(self, F, data: 'NDArray', inds: 'NDArray') -> 'NDArray':
+    def hybrid_forward(self, F, data: mx.ndarray, inds: mx.ndarray) -> mx.ndarray:
         """
         :param data: The sentence representation (token indices to feed to embedding layer)
         :param inds: A vector - shape (2,) of two indices referring to positions of the two arguments

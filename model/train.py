@@ -6,33 +6,39 @@ from mxnet import gluon, autograd
 from mxnet.gluon import nn
 from mxnet.gluon.data import DataLoader
 import gluonnlp as nlp
-from load_data import load_dataset
+from load_data import load_dataset, BasicTransform
 from model import RelationClassifier
 from utils import logging_config
-from mxnet.gluon.loss import Loss
 from typing import List
 
-parser = argparse.ArgumentParser(description='Train a simple binary relation classifier')
-parser.add_argument('--train_file', type=str, help='File containing file representing the input TRAINING data')
-parser.add_argument('--val_file', type=str, help='File containing file representing the input VALIDATION data', default=None)
-parser.add_argument('--test_file', type=str, help='File containing file representing the input TEST data', default=None)
-parser.add_argument('--epochs', type=int, default=10, help='Upper epoch limit')
-parser.add_argument('--optimizer',type=str, help='Optimizer (adam, sgd, etc.)', default='adam')
-parser.add_argument('--lr',type=float, help='Learning rate', default=0.1)
-parser.add_argument('--batch_size',type=int, help='Training batch size', default=64)
-parser.add_argument('--dropout', type=float, help='Dropout ratio', default=0.5)
-parser.add_argument('--embedding_source', type=str, default='freebase-vectors-skipgram1000-en', help='Pre-trained embedding source name')
-parser.add_argument('--log_dir', type=str, default='.', help='Output directory for log file')
-parser.add_argument('--fixed_embedding', action='store_true', help='Fix the embedding layer weights')
-parser.add_argument('--random_embedding', action='store_true', help='Use random initialized embedding layer')
-parser.add_argument('--out_file', type=str, help='File containing the output predictions')
-parser.add_argument('--context', type=str, help='cpu or gpu')
-parser.add_argument('--max_len', type=int, default=100, help='Input sequence maximum length')
-parser.add_argument('--debug', action='store_true', help='Run the model on a small dataset for debugging purpose')
 
-args = parser.parse_args()
+def get_parser():
+    parser = argparse.ArgumentParser(description='Train a simple binary relation classifier')
+    # training args
+    parser.add_argument('--train_file', type=str, help='File containing file representing the input TRAINING data')
+    parser.add_argument('--val_file', type=str, help='File containing file representing the input VALIDATION data', default=None)
+    parser.add_argument('--test_file', type=str, help='File containing file representing the input TEST data', default=None)
+    parser.add_argument('--log_dir', type=str, default='.', help='Output directory for log file')
+    parser.add_argument('--out_file', type=str, help='File containing the output predictions')
+    parser.add_argument('--debug', action='store_true', help='Run the model on a small dataset for debugging purpose')
+    parser.add_argument('--max_len', type=int, default=100, help='Input sequence maximum length')
+    parser.add_argument('--context', type=str, help='cpu or gpu')
 
-def classify_test_data(model: 'RelationClassifier', data_test: 'BasicTransform', ctx=mx.cpu()) -> List[int]:
+    # model hyper-parameter args
+    parser.add_argument('--epochs', type=int, default=10, help='Upper epoch limit')
+    parser.add_argument('--optimizer',type=str, help='Optimizer (adam, sgd, etc.)', default='adam')
+    parser.add_argument('--lr',type=float, help='Learning rate', default=0.1)
+    parser.add_argument('--batch_size',type=int, help='Training batch size', default=64)
+    parser.add_argument('--dropout', type=float, help='Dropout ratio', default=0.5)
+
+    # model embedding args
+    parser.add_argument('--embedding_source', type=str, default='freebase-vectors-skipgram1000-en', help='Pre-trained embedding source name')
+    parser.add_argument('--fixed_embedding', action='store_true', help='Fix the embedding layer weights')
+    parser.add_argument('--random_embedding', action='store_true', help='Use random initialized embedding layer')
+    return parser
+
+
+def classify_test_data(model: RelationClassifier, data_test: BasicTransform, ctx=mx.cpu()) -> List[int]:
     """
     Generate predictions on the test data and returns the predictions in a list
     :param model: trained model
@@ -51,8 +57,8 @@ def classify_test_data(model: 'RelationClassifier', data_test: 'BasicTransform',
     return preds
 
 
-def train_classifier(vocabulary: 'Vocabulary', transformer: 'BasicTransform', data: 'NDArray',
-                     ctx=mx.cpu(), debug=True) -> List[int]:
+def train_classifier(vocabulary: nlp.vocab, transformer: BasicTransform, data: mx.ndarray,
+                     ctx=mx.cpu(), debug=True) -> RelationClassifier:
     """
     Main loop for training a classifier
     :param vocabulary: vocabulary of the model
@@ -130,6 +136,45 @@ def train_classifier(vocabulary: 'Vocabulary', transformer: 'BasicTransform', da
     return model
 
 
+def predict(model: RelationClassifier, data_test: mx.ndarray, transformer: BasicTransform, ctx=mx.cpu()) -> mx.ndarray:
+    """
+    use the trained model for test data inference
+    :param model: trained RelationClassifier model
+    :param data_test: test dataset
+    :param transformer: data structure that holds the test data without their labels
+    :return: a list of predictions for the test set
+    """
+    data_test = gluon.data.SimpleDataset(data_test).transform(transformer)
+    test_dataloader = mx.gluon.data.DataLoader(data_test, batch_size=args.batch_size, shuffle=False)
+    test_preds = classify_test_data(model, test_dataloader, ctx)
+    return test_preds
+
+
+def _eval(model: RelationClassifier, dataloader: DataLoader, ctx=mx.cpu()) -> float:
+    """
+    Get predictions on the dataloader items from model
+    Return metrics (accuracy, etc.)
+    :param model: the trained RelationClassifier model
+    :param dataloader: test data in the dataloader structure. there is no labels for test data sets
+    :param ctx: cpu or gpu, default to cpu
+    :return: the accuracy score
+    """
+
+    total_correct, total = 0, 0
+    for i, (data, inds, label) in enumerate(dataloader):
+        data = data.as_in_context(ctx)
+        label = label.as_in_context(ctx)
+        inds = inds.as_in_context(ctx)
+        score = model(data, inds)
+        predictions = mx.nd.argmax(score, axis=1)
+        correctPreds = predictions.astype('int').as_in_context(ctx) == \
+                       label.transpose()[0, :].astype('int').as_in_context(ctx)
+        total_correct += mx.nd.sum(correctPreds).asscalar()
+        total += len(data)
+    acc = total_correct / float(total)
+    return acc
+
+
 class DistanceLoss(nn.Block):
     """
     this is the ranking loss function implemented from paper https://www.aclweb.org/anthology/P15-1061.pdf
@@ -141,7 +186,7 @@ class DistanceLoss(nn.Block):
         super(DistanceLoss, self).__init__()
         self.ctx = ctx
 
-    def forward(self, score: 'NDArray', label: 'NDArray', mplus: float=2.5, mNeg: float=0.5, gamma: int=2) -> 'NDArray':
+    def forward(self, score: mx.ndarray, label: mx.ndarray, mplus: float=2.5, mNeg: float=0.5, gamma: int=2) -> mx.ndarray:
         """
         :param score: a list of predicted scores/probabilities over all labels
         :param label: ground truth labels
@@ -176,46 +221,9 @@ class DistanceLoss(nn.Block):
         return loss/label.shape[0]
 
 
-def predict(model: 'RelationClassifier', data_test: 'NDArray', transformer: 'BasicTransform', ctx=mx.cpu()) -> 'NDArray':
-    """
-    use the trained model for test data inference
-    :param model: trained RelationClassifier model
-    :param data_test: test dataset
-    :param transformer: data structure that holds the test data without their labels
-    :return: a list of predictions for the test set
-    """
-    data_test = gluon.data.SimpleDataset(data_test).transform(transformer)
-    test_dataloader = mx.gluon.data.DataLoader(data_test, batch_size=args.batch_size, shuffle=False)
-    test_preds = classify_test_data(model, test_dataloader, ctx)
-    return test_preds
-
-
-def _eval(model: 'RelationClassifier', dataloader: 'DataLoader', ctx=mx.cpu()) -> float:
-    """
-    Get predictions on the dataloader items from model
-    Return metrics (accuracy, etc.)
-    :param model: the trained RelationClassifier model
-    :param dataloader: test data in the dataloader structure. there is no labels for test data sets
-    :param ctx: cpu or gpu, default to cpu
-    :return: the accuracy score
-    """
-
-    total_correct, total = 0, 0
-    for i, (data, inds, label) in enumerate(dataloader):
-        data = data.as_in_context(ctx)
-        label = label.as_in_context(ctx)
-        inds = inds.as_in_context(ctx)
-        score = model(data, inds)
-        predictions = mx.nd.argmax(score, axis=1)
-        correctPreds = predictions.astype('int').as_in_context(ctx) == \
-                       label.transpose()[0, :].astype('int').as_in_context(ctx)
-        total_correct += mx.nd.sum(correctPreds).asscalar()
-        total += len(data)
-    acc = total_correct / float(total)
-    return acc
-
-
 if __name__ == '__main__':
+    parser = get_parser()
+    args = parser.parse_args()
     # log training process
     logging_config(args.log_dir, 'train', level=logging.INFO)
     # load dataset from an input file
