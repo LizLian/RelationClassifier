@@ -91,7 +91,7 @@ load_data.py - read the input file and convert unstructured data into token IDs.
 
 utils.py - utility file
 
-    It's a file for logging, adapted from existing code.
+    It's a logging file, adapted from existing code.
 
 # References
 1. Wang, Linlin, et al. "Relation classification via multi-level attention cnns." Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2016.

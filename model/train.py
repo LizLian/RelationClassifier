@@ -3,7 +3,7 @@
 import argparse, logging
 import mxnet as mx
 from mxnet import gluon, autograd
-from mxnet.gluon import nn
+from distance_loss import DistanceLoss
 from mxnet.gluon.data import DataLoader
 import gluonnlp as nlp
 from load_data import load_dataset, BasicTransform
@@ -36,25 +36,6 @@ def get_parser():
     parser.add_argument('--fixed_embedding', action='store_true', help='Fix the embedding layer weights')
     parser.add_argument('--random_embedding', action='store_true', help='Use random initialized embedding layer')
     return parser
-
-
-def classify_test_data(model: RelationClassifier, data_test: BasicTransform, ctx=mx.cpu()) -> List[int]:
-    """
-    Generate predictions on the test data and returns the predictions in a list
-    :param model: trained model
-    :param data_test: data loader
-    :param ctx: cpu or gpu, default for cpu
-    :return: a list of predictions
-    """
-    preds = []
-    for i, x in enumerate(data_test):
-        data, inds, label = x
-        data = data.as_in_context(ctx)
-        inds = inds.as_in_context(ctx)
-        score = model(data, inds)
-        predictions = mx.nd.argmax(score, axis=1)
-        preds.extend(predictions)
-    return preds
 
 
 def train_classifier(vocabulary: nlp.Vocab, transformer: BasicTransform, data: mx.ndarray,
@@ -127,13 +108,32 @@ def train_classifier(vocabulary: nlp.Vocab, transformer: BasicTransform, data: m
             epoch_loss += l.asscalar()
         logging.info(f"Epoch{epoch} loss = {epoch_loss}")
         # evaluate on the dev dataset
-        val_acc = _eval(model, val_dataloader, ctx)
+        val_acc = evaluate(model, val_dataloader, ctx)
         # evaluate on the training dataset
-        train_acc = _eval(model, train_dataloader, ctx)
+        train_acc = evaluate(model, train_dataloader, ctx)
         logging.info(f"Train Acc = {train_acc}, Validation Acc = {val_acc}")
     # save the best model parameters
     model.save_parameters('base.params')
     return model
+
+
+def classify_test_data(model: RelationClassifier, data_test: BasicTransform, ctx=mx.cpu()) -> List[int]:
+    """
+    Generate predictions on the test data and returns the predictions in a list
+    :param model: trained model
+    :param data_test: data loader
+    :param ctx: cpu or gpu, default for cpu
+    :return: a list of predictions
+    """
+    preds = []
+    for i, x in enumerate(data_test):
+        data, inds, label = x
+        data = data.as_in_context(ctx)
+        inds = inds.as_in_context(ctx)
+        score = model(data, inds)
+        predictions = mx.nd.argmax(score, axis=1)
+        preds.extend(predictions)
+    return preds
 
 
 def predict(model: RelationClassifier, data_test: mx.ndarray, transformer: BasicTransform, ctx=mx.cpu()) -> mx.ndarray:
@@ -150,7 +150,7 @@ def predict(model: RelationClassifier, data_test: mx.ndarray, transformer: Basic
     return test_preds
 
 
-def _eval(model: RelationClassifier, dataloader: DataLoader, ctx=mx.cpu()) -> float:
+def evaluate(model: RelationClassifier, dataloader: DataLoader, ctx=mx.cpu()) -> float:
     """
     Get predictions on the dataloader items from model
     Return metrics (accuracy, etc.)
@@ -173,52 +173,6 @@ def _eval(model: RelationClassifier, dataloader: DataLoader, ctx=mx.cpu()) -> fl
         total += len(data)
     acc = total_correct / float(total)
     return acc
-
-
-class DistanceLoss(nn.Block):
-    """
-    this is the ranking loss function implemented from paper https://www.aclweb.org/anthology/P15-1061.pdf
-    Like some other ranking approaches that only update two classes/examples at every training round ,
-    this ranking approach can efficiently train the network for tasks which have a very large number of classes.
-    """
-
-    def __init__(self, ctx):
-        super(DistanceLoss, self).__init__()
-        self.ctx = ctx
-
-    def forward(self, score: mx.ndarray, label: mx.ndarray, mplus: float=2.5, mNeg: float=0.5, gamma: int=2) -> mx.ndarray:
-        """
-        :param score: a list of predicted scores/probabilities over all labels
-        :param label: ground truth labels
-        :param mplus: a parameter (positive loss) for the distance loss function
-        :param mNeg: a parameter (negative loss) for the distance loss function
-        :param gamma: a scaling factor that magnifies the difference between the score and the margin. It helps more
-        with penalizing the prediction errors
-        :return: loss for the batch
-        """
-        rows = mx.nd.array(list(range(len(score))))
-        # ground truth score
-        gt_score = score[rows, label.transpose()[0,:]].as_in_context(self.ctx)
-        gt_score = mx.nd.log(1 + mx.nd.exp(gamma * (mplus - gt_score))) + mx.nd.log(
-            1 + mx.nd.exp(gamma * (-100 + gt_score)))  # positive loss
-
-        # top two scores for each batch, return the score that's different from ground truth
-        val, inds = mx.nd.topk(score, axis=1, k=2, ret_typ='both')
-        predT = inds[:, 0].astype('int').as_in_context(self.ctx) == label.transpose((1,0)).astype('int').as_in_context(self.ctx)
-        predF = inds[:, 0].astype('int').as_in_context(self.ctx) != label.transpose((1,0)).astype('int').as_in_context(self.ctx)
-        predT = predT[0, :]
-        predF = predF[0, :]
-
-        # negative loss
-        part2 = mx.nd.log(1 + mx.nd.exp(gamma * (mNeg + val))) + mx.nd.log(
-            1 + mx.nd.exp(gamma * (-100 - val)))
-        # positive loss
-        part2 = mx.nd.dot(predT.astype('float'), part2[:, 1].astype('float')) + \
-                mx.nd.dot(predF.astype('float'), part2[:, 0].astype('float'))
-
-        # include other loss
-        loss = mx.nd.sum(gt_score.astype('float')) + part2.astype('float')
-        return loss/label.shape[0]
 
 
 if __name__ == '__main__':
