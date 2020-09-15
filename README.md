@@ -97,13 +97,13 @@ utils.py - utility file
     It's a logging file, adapted from existing code.
 
 # Results
-Sentence length 100, learning rate 0.3, epoch 25, dropout 0.5, word2vec embedding, including “other” loss, cross validation
+Sentence length 100, learning rate 0.3, epoch 25, dropout 0.5, word2vec embedding, including “other” loss, cross validation \
 Epoch 1: training accuracy: 54% \
 Epoch 5: training accuracy: 78% \
 Epoch 10: training accuracy: 87% \
 Epoch 15: training accuracy: 94% \
 Epoch 20: training accuracy: 97% \
-Epoch 25: training accuracy: 99% \
+Epoch 25: training accuracy: 99% 
 
 Test accuracy: 76%
 
