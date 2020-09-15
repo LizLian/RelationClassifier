@@ -74,17 +74,20 @@ model.py - model implementation for Relation Classifier
 
 train.py - main loop for training the classifier
 
-    Other than serving as the main loop for training the classifier, it also
-    contains the implementation of novel distance loss function. The ranking
-    was proposed by Wang, LinLin, et al.  
-    Like some other ranking approaches that only update two classes/examples
-    at every training round, this ranking approach can efficiently train the
-    network for tasks which have a very large number of classes. The detailed
-    implementation can be seen in class `DistanceLoss`.
+    Initializes model, serves as the main loop for training the classifier.
+    Predict and evaluate the results.
     Inference is currently done through `train.py` if a test file is provided.
     May want to separate the inference by creating a predict.py file later.
 
-load_data.py - read the input file and convert unstructured data into token IDs.
+distance_loss.py - contains the implementation of a novel distance loss function.
+    
+    The distance loss function was propose by dos Santos et al. and enhanced by 
+    Wang, LinLin, et al. 
+    at every training round, this ranking approach can efficiently train the
+    network for tasks which have a very large number of classes. The detailed
+    implementation can be seen in class `DistanceLoss`.
+
+load_data.py - reads the input file and convert unstructured data into token IDs.
 
     use to preprocess files before training the classifier. You only need to
     provide a train data file. Dataset will be split into train and val datasets.
