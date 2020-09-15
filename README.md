@@ -11,6 +11,9 @@ There are 19 relation types in the training set. They are:
 This project is an implementation of the paper "Relation Classification via Multi-Level Attention CNNs"[1] using MXNet.
 https://www.aclweb.org/anthology/P16-1123.pdf
 
+Embedding - this model uses pre-trained embedding from gluonnlp APIs. You can choose anything come with MNXet.
+Read more here - https://gluon-nlp.mxnet.io/api/modules/embedding.html
+
 The model consists of input word embedding, relative position encodings, multiple CNN layers as the sliding window to recognize bigrams, trigrams etc., a max pooling layer, and  a dense layer at the end.
 This paper proposed a novel loss function  L = log(1 + exp(γ(m+ − sθ(x)y+ )) + log(1 + exp(γ(m− + sθ(x)c− ). It is referred to as a ranking method in the paper. Like some other ranking approaches that only update two classes/examples at every training round, this ranking approach can efficiently train the network for tasks which have a very large number of classes. The implementation of this loss function can be found in DistanceLoss class in train.py.
 
