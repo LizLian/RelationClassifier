@@ -49,7 +49,7 @@ def load_tsv_to_array(fname: str) -> List[Tuple[str, int, int, str]]:
 
 
 def load_dataset(file: str, max_length: int = 100) \
-        -> Tuple[nlp.vocab, List[Tuple[str, int, int, List[int]]], 'BasicTransform']:
+        -> Tuple[nlp.Vocab, List[Tuple[str, int, int, List[int]]], 'BasicTransform']:
     """
     parse the input data by getting the word sequence and the argument position ids for entity1 and entity2
     :param file: training file in TSV format. Split the file later. Cross validation
@@ -72,7 +72,7 @@ def tokenize(txt: str) -> List[str]:
     return word_tokenize(txt)
 
 
-def build_vocabulary(array: List[Tuple[str, int, int, List[str]]]) -> nlp.vocab:
+def build_vocabulary(array: List[Tuple[str, int, int, List[str]]]) -> nlp.Vocab:
     """
     Inputs: arrays representing the training, validation or test data
     Outputs: vocabulary (Tokenized text as in-place modification of input arrays or returned as new arrays)
@@ -109,7 +109,7 @@ def _get_tokens(array: Tuple[str, int, int, str]) -> Tuple[List[Tuple[str, int, 
     return array, all_tokens
 
 
-def _preprocess(x: Tuple[str, int, int, List[str]], vocab: nlp.vocab, max_len: int) -> Tuple[str, int, int, List[int]]:
+def _preprocess(x: Tuple[str, int, int, List[str]], vocab: nlp.Vocab, max_len: int) -> Tuple[str, int, int, List[int]]:
     """
     Inputs: data instance x (tokenized), vocabulary, maximum length of input (in tokens)
     Outputs: data mapped to token IDs, with corresponding label
@@ -121,7 +121,7 @@ def _preprocess(x: Tuple[str, int, int, List[str]], vocab: nlp.vocab, max_len: i
     return label, ind1, ind2, data
 
 
-def preprocess_dataset(dataset: Tuple[str, int, int, List[str]], vocab: nlp.vocab, max_len: int)\
+def preprocess_dataset(dataset: Tuple[str, int, int, List[str]], vocab: nlp.Vocab, max_len: int)\
         -> Tuple[str, int, int, List[int]]:
     """
     map data to token ids with corresponding labels

@@ -57,7 +57,7 @@ def classify_test_data(model: RelationClassifier, data_test: BasicTransform, ctx
     return preds
 
 
-def train_classifier(vocabulary: nlp.vocab, transformer: BasicTransform, data: mx.ndarray,
+def train_classifier(vocabulary: nlp.Vocab, transformer: BasicTransform, data: mx.ndarray,
                      ctx=mx.cpu(), debug=True) -> RelationClassifier:
     """
     Main loop for training a classifier
@@ -101,8 +101,8 @@ def train_classifier(vocabulary: nlp.vocab, transformer: BasicTransform, data: m
         data_train = data[0:1000]
         data_val = data[1000: 1200]
     else:
-        data_train = data[:len(data)*0.8]
-        data_val = data[len(data)*0.8:]
+        data_train = data[:int(len(data)*0.8)]
+        data_val = data[int(len(data)*0.8):]
     data_train = gluon.data.SimpleDataset(data_train).transform(transformer)
     data_val = gluon.data.SimpleDataset(data_val).transform(transformer)
 
