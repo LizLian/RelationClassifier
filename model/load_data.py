@@ -69,17 +69,16 @@ def load_dataset(file: str, max_length: int = 100) -> Tuple['Vocab', List[Tuple[
 def tokenize(txt: str) -> List[str]:
     """
     Tokenize an input string.
-    May want to develop something more sophisticated later
     """
     return word_tokenize(txt)
 
 
-def build_vocabulary(tr_array: List[Tuple[str, int, int, List[str]]]) -> 'Vocab':
+def build_vocabulary(array: List[Tuple[str, int, int, List[str]]]) -> nlp.vocab:
     """
     Inputs: arrays representing the training, validation or test data
     Outputs: vocabulary (Tokenized text as in-place modification of input arrays or returned as new arrays)
     """
-    tr_array, tokens = _get_tokens(tr_array)
+    array, tokens = _get_tokens(array)
     counter = nlp.data.count_tokens(tokens)
     vocab = nlp.Vocab(counter)
     return vocab
@@ -88,9 +87,11 @@ def build_vocabulary(tr_array: List[Tuple[str, int, int, List[str]]]) -> 'Vocab'
 def _get_tokens(array: Tuple[str, int, int, str]) -> Tuple[List[Tuple[str, int, int, List[str]]], List[str]]:
     """
     an internal function that maps word tokens to indices
+    this method also marks the start and end of each entity
     """
     all_tokens = []
     for i, instance in enumerate(array):
+        # e1 - entity 1; e2 - entity 2
         label, e1, e2, text = instance
         tokens = text.split(" ")
         tokens.insert(e2 + 1, "e2_end")
@@ -108,7 +109,7 @@ def _get_tokens(array: Tuple[str, int, int, str]) -> Tuple[List[Tuple[str, int, 
     return array, all_tokens
 
 
-def _preprocess(x: Tuple[str, int, int, List[str]], vocab: 'Vocab', max_len: int) -> Tuple[str, int, int, List[int]]:
+def _preprocess(x: Tuple[str, int, int, List[str]], vocab: nlp.vocab, max_len: int) -> Tuple[str, int, int, List[int]]:
     """
     Inputs: data instance x (tokenized), vocabulary, maximum length of input (in tokens)
     Outputs: data mapped to token IDs, with corresponding label
@@ -120,7 +121,7 @@ def _preprocess(x: Tuple[str, int, int, List[str]], vocab: 'Vocab', max_len: int
     return label, ind1, ind2, data
 
 
-def preprocess_dataset(dataset: Tuple[str, int, int, List[str]], vocab: 'Vocab', max_len: int)\
+def preprocess_dataset(dataset: Tuple[str, int, int, List[str]], vocab: nlp.vocab, max_len: int)\
         -> Tuple[str, int, int, List[int]]:
     """
     map data to token ids with corresponding labels

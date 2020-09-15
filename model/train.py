@@ -1,4 +1,4 @@
-# codeing: utf-8
+# coding: utf-8
 
 import argparse, logging
 import mxnet as mx
@@ -28,11 +28,9 @@ parser.add_argument('--random_embedding', action='store_true', help='Use random 
 parser.add_argument('--out_file', type=str, help='File containing the output predictions')
 parser.add_argument('--context', type=str, help='cpu or gpu')
 parser.add_argument('--max_len', type=int, default=100, help='Input sequence maximum length')
-parser.add_argument('--debug', type=bool, default=True, help='Run the model on a small dataset for debugging purpose')
+parser.add_argument('--debug', action='store_true', help='Run the model on a small dataset for debugging purpose')
 
 args = parser.parse_args()
-loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
-
 
 def classify_test_data(model: 'RelationClassifier', data_test: 'BasicTransform', ctx=mx.cpu()) -> List[int]:
     """
@@ -67,7 +65,7 @@ def train_classifier(vocabulary: 'Vocabulary', transformer: 'BasicTransform', da
 
     emb_input_dim, emb_output_dim = vocabulary.embedding.idx_to_vec.shape if vocabulary.embedding else (len(vocabulary), 128)
 
-    num_classes = 19 # XXX - parameterize and/or derive from dataset
+    num_classes = 19 # number of classes derived from training set
     model = RelationClassifier(emb_input_dim, emb_output_dim, num_classes=num_classes)
     differentiable_params = []
 
@@ -78,8 +76,6 @@ def train_classifier(vocabulary: 'Vocabulary', transformer: 'BasicTransform', da
         model.embedding.weight.set_data(vocabulary.embedding.idx_to_vec)
     elif args.fixed_embedding:
         model.embedding.collect_params().setattr('grad_req', 'null')
-
-    # model.hybridize() ## OPTIONAL for efficiency - perhaps easier to comment this out during debugging
 
     # Do not apply weight decay on LayerNorm and bias terms
     for _, v in model.collect_params('.*beta|.*gamma|.*bias').items():
@@ -116,7 +112,6 @@ def train_classifier(vocabulary: 'Vocabulary', transformer: 'BasicTransform', da
             inds = inds.as_in_context(ctx)
             with autograd.record():
                 score = model(data1, inds)
-                # l = loss_fn(score, label).mean()
                 # use the distance loss from the acnn paper
                 l = distance_loss(score, label)
             l.backward()
@@ -140,7 +135,6 @@ class DistanceLoss(nn.Block):
     this is the ranking loss function implemented from paper https://www.aclweb.org/anthology/P15-1061.pdf
     Like some other ranking approaches that only update two classes/examples at every training round ,
     this ranking approach can efficiently train the network for tasks which have a very large number of classes.
-
     """
 
     def __init__(self, ctx):
@@ -153,11 +147,10 @@ class DistanceLoss(nn.Block):
         :param label: ground truth labels
         :param mplus: a parameter (positive loss) for the distance loss function
         :param mNeg: a parameter (negative loss) for the distance loss function
-        :param gamma: a paramter for the distance loss function
+        :param gamma: a scaling factor that magnifies the difference between the score and the margin. It helps more
+        with penalizing the prediction errors
         :return: loss for the batch
         """
-        # rel_weight (dc=500, nr=19)
-        # score (batch_size, dr=19)
         rows = mx.nd.array(list(range(len(score))))
         # ground truth score
         gt_score = score[rows, label.transpose()[0,:]].as_in_context(self.ctx)
@@ -230,16 +223,13 @@ if __name__ == '__main__':
 
     # set word embedding
     if args.embedding_source:
-        # experiment different embeddings here (word2vec, fasttext, glove etc.)
+        # specify word embedding
         embeddings = nlp.embedding.create('word2vec', source=args.embedding_source)
         vocab.set_embedding(embeddings)
     emb_dim = vocab.embedding.idx_to_vec.shape[1]
 
-    # mx.gpu(N) if GPU device N is available
-    if args.context=='cpu':
-        ctx = mx.cpu()
-    else:
-        ctx = mx.gpu()
+    # cpu/gpu
+    ctx = mx.gpu() if args.context=='gpu' else mx.cpu()
 
     # train model
     model = train_classifier(vocab, transform, dataset, ctx, args.debug)
